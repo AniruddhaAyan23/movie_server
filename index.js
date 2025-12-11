@@ -1,15 +1,17 @@
+require('dotenv').config();
+
+const port = process.env.PORT || 3000;
+
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
-const { ObjectId } = require('mongoose').Types;
 const app = express();
-const port = process.env.PORT || 3000;
+
 
 app.use(cors());
 app.use(express.json());
 
-const uri = "mongodb+srv://amiDBUser:Pgvgh79IL1An1Kdn@cluster0.exciqdu.mongodb.net/movieMasterDB";
-
+const uri = process.env.MONGO_URI;
 mongoose.connect(uri)
   .then(() => console.log('Successfully connected to MongoDB!'))
   .catch(err => console.error('MongoDB connection error:', err.message));
@@ -35,12 +37,30 @@ app.get('/', (req, res) => {
   res.send('MovieMaster Pro Server Running');
 });
 
-app.get('/movies', async (req, res) => {
+app.get('/movies/top-rated', async (req, res) => {
   try {
-    const movies = await Movie.find();
+    const movies = await Movie.find().sort({ rating: -1 }).limit(5);
     res.send(movies);
   } catch (error) {
-    res.status(500).send({ message: 'Error fetching movies', error: error.message });
+    res.status(500).send({ message: 'Error fetching top rated movies', error: error.message });
+  }
+});
+
+app.get('/movies/recent', async (req, res) => {
+  try {
+    const movies = await Movie.find().sort({ createdAt: -1 }).limit(6);
+    res.send(movies);
+  } catch (error) {
+    res.status(500).send({ message: 'Error fetching recent movies', error: error.message });
+  }
+});
+
+app.get('/movies/user/:email', async (req, res) => {
+  try {
+    const movies = await Movie.find({ addedBy: req.params.email });
+    res.send(movies);
+  } catch (error) {
+    res.status(500).send({ message: 'Error fetching user movies', error: error.message });
   }
 });
 
@@ -56,12 +76,12 @@ app.get('/movies/:id', async (req, res) => {
   }
 });
 
-app.get('/movies/user/:email', async (req, res) => {
+app.get('/movies', async (req, res) => {
   try {
-    const movies = await Movie.find({ addedBy: req.params.email });
+    const movies = await Movie.find();
     res.send(movies);
   } catch (error) {
-    res.status(500).send({ message: 'Error fetching user movies', error: error.message });
+    res.status(500).send({ message: 'Error fetching movies', error: error.message });
   }
 });
 
@@ -100,24 +120,6 @@ app.delete('/movies/:id', async (req, res) => {
     res.send({ message: 'Movie deleted successfully', deletedMovie: result });
   } catch (error) {
     res.status(500).send({ message: 'Error deleting movie', error: error.message });
-  }
-});
-
-app.get('/movies/top-rated', async (req, res) => {
-  try {
-    const movies = await Movie.find().sort({ rating: -1 }).limit(5);
-    res.send(movies);
-  } catch (error) {
-    res.status(500).send({ message: 'Error fetching top rated movies', error: error.message });
-  }
-});
-
-app.get('/movies/recent', async (req, res) => {
-  try {
-    const movies = await Movie.find().sort({ createdAt: -1 }).limit(6);
-    res.send(movies);
-  } catch (error) {
-    res.status(500).send({ message: 'Error fetching recent movies', error: error.message });
   }
 });
 
